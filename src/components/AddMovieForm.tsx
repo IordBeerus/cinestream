@@ -13,11 +13,11 @@ import { movieService } from "../movieService";
 interface AddMovieFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (movie: Omit<Movie, "id">) => void;
+  onAdd: (movie: Omit<Movie, "id">) => Promise<void>;
   movieToEdit?: Movie | null;
   announcementToEdit?: Announcement | null;
-  onUpdateMovie?: (id: string, updates: Partial<Movie>) => void;
-  onUpdateAnnouncement?: (id: string, updates: Partial<Announcement>) => void;
+  onUpdateMovie?: (id: string, updates: Partial<Movie>) => Promise<void>;
+  onUpdateAnnouncement?: (id: string, updates: Partial<Announcement>) => Promise<void>;
   onDelete?: () => void;
 }
 
@@ -175,18 +175,23 @@ export default function AddMovieForm({
     setSeasons(seasons.filter(s => s.id !== seasonId).map((s, index) => ({ ...s, number: index + 1 })));
   };
 
-  const handleAddAnnouncement = (e: FormEvent) => {
+  const handleAddAnnouncement = async (e: FormEvent) => {
     e.preventDefault();
     if (!announcementData.title.trim() || !announcementData.message.trim()) return;
     
-    if (announcementToEdit && onUpdateAnnouncement) {
-      onUpdateAnnouncement(announcementToEdit.id, announcementData);
-    } else {
-      notificationService.addAnnouncement(announcementData);
+    try {
+      if (announcementToEdit && onUpdateAnnouncement) {
+        await onUpdateAnnouncement(announcementToEdit.id, announcementData);
+      } else {
+        await notificationService.addAnnouncement(announcementData);
+      }
+      
+      setAnnouncementData({ title: "", message: "", type: "info" });
+      onClose();
+    } catch (error) {
+      console.error("Error saving announcement:", error);
+      alert("Failed to save announcement.");
     }
-    
-    setAnnouncementData({ title: "", message: "", type: "info" });
-    onClose();
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -222,14 +227,19 @@ export default function AddMovieForm({
       }
     }
 
-    if (movieToEdit && onUpdateMovie) {
-      await onUpdateMovie(movieToEdit.id, movieData);
-    } else {
-      await onAdd(movieData as Omit<Movie, "id">);
+    try {
+      if (movieToEdit && onUpdateMovie) {
+        await onUpdateMovie(movieToEdit.id, movieData);
+      } else {
+        await onAdd(movieData as Omit<Movie, "id">);
+      }
+      
+      onClose();
+      resetForm();
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      alert("An error occurred while saving. Please check the console for details.");
     }
-    
-    onClose();
-    resetForm();
   };
 
   const resetForm = () => {

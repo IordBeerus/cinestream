@@ -68,9 +68,10 @@ export default function App() {
     setMovieToEdit(null);
   };
 
-  const handleUpdateAnnouncement = (id: string, updates: Partial<Announcement>) => {
-    notificationService.updateAnnouncement(id, updates);
+  const handleUpdateAnnouncement = async (id: string, updates: Partial<Announcement>) => {
+    await notificationService.updateAnnouncement(id, updates);
     setAnnouncementToEdit(null);
+    // Announcements are fetched by Navbar's interval or could be manually refreshed if needed
   };
 
   const handleEditAnnouncement = (announcement: Announcement) => {
@@ -94,7 +95,7 @@ export default function App() {
     const init = async () => {
       await refreshData();
       const savedProfile = movieService.getActiveProfile();
-      if (savedProfile) {
+      if (savedProfile && !savedProfile.pin) {
         setActiveProfile(savedProfile);
       }
     };

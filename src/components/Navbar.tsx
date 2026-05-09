@@ -47,8 +47,14 @@ export default function Navbar({
   const notificationRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const fetchAnnouncements = async () => {
+      const latest = await notificationService.getAnnouncements();
+      setAnnouncements(latest);
+    };
+
     setActiveProfile(movieService.getActiveProfile());
-    setAnnouncements(notificationService.getAnnouncements());
+    fetchAnnouncements();
+
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 0);
     };
@@ -63,9 +69,7 @@ export default function Navbar({
     window.addEventListener("mousedown", handleClickOutside);
 
     // Poll for notifications
-    const interval = setInterval(() => {
-      setAnnouncements(notificationService.getAnnouncements());
-    }, 5000);
+    const interval = setInterval(fetchAnnouncements, 10000);
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
@@ -74,10 +78,11 @@ export default function Navbar({
     };
   }, []);
 
-  const deleteAnnouncement = (id: string, e: React.MouseEvent) => {
+  const deleteAnnouncement = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    notificationService.deleteAnnouncement(id);
-    setAnnouncements(notificationService.getAnnouncements());
+    await notificationService.deleteAnnouncement(id);
+    const updated = await notificationService.getAnnouncements();
+    setAnnouncements(updated);
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {

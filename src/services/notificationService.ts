@@ -3,34 +3,44 @@ import { Announcement } from "../types";
 const STORAGE_KEY = "netflix_announcements";
 
 export const notificationService = {
-  getAnnouncements: (): Announcement[] => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
+  getAnnouncements: async (): Promise<Announcement[]> => {
+    try {
+      const response = await fetch("/api/announcements");
+      if (!response.ok) throw new Error("Failed to fetch announcements");
+      return await response.json();
+    } catch (e) {
+      console.error("Error fetching announcements:", e);
+      return [];
+    }
   },
 
-  addAnnouncement: (announcement: Omit<Announcement, "id" | "timestamp">): void => {
-    const announcements = notificationService.getAnnouncements();
-    const newAnnouncement: Announcement = {
-      ...announcement,
-      id: Math.random().toString(36).substr(2, 9),
-      timestamp: Date.now(),
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([newAnnouncement, ...announcements]));
+  addAnnouncement: async (announcement: Omit<Announcement, "id" | "timestamp">): Promise<void> => {
+    const response = await fetch("/api/announcements", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(announcement)
+    });
+    if (!response.ok) throw new Error("Failed to add announcement");
   },
 
-  deleteAnnouncement: (id: string): void => {
-    const announcements = notificationService.getAnnouncements();
-    const updated = announcements.filter(a => a.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  deleteAnnouncement: async (id: string): Promise<void> => {
+    const response = await fetch(`/api/announcements/${id}`, {
+      method: "DELETE"
+    });
+    if (!response.ok) throw new Error("Failed to delete announcement");
   },
 
-  updateAnnouncement: (id: string, updates: Partial<Announcement>): void => {
-    const announcements = notificationService.getAnnouncements();
-    const updated = announcements.map(a => a.id === id ? { ...a, ...updates, timestamp: Date.now() } : a);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  updateAnnouncement: async (id: string, updates: Partial<Announcement>): Promise<void> => {
+    const response = await fetch(`/api/announcements/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates)
+    });
+    if (!response.ok) throw new Error("Failed to update announcement");
   },
 
   clearAll: (): void => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+    // This is less common for shared announcements, maybe just ignore or implement if needed
+    console.warn("clearAll not implemented for shared announcements");
   }
 };

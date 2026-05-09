@@ -84,6 +84,16 @@ async function startServer() {
     }
   ];
 
+  let sharedAnnouncements = [
+    {
+      id: "a1",
+      title: "Welcome to CineStream!",
+      message: "Enjoy the latest movies and TV shows from your Google Drive library.",
+      timestamp: Date.now(),
+      type: "info"
+    }
+  ];
+
   // API Routes
   app.get("/api/movies", (req, res) => {
     res.json(sharedMovies);
@@ -107,6 +117,33 @@ async function startServer() {
   app.delete("/api/movies/:id", (req, res) => {
     const { id } = req.params;
     sharedMovies = sharedMovies.filter(m => m.id !== id);
+    res.json({ success: true });
+  });
+
+  // Announcement Routes
+  app.get("/api/announcements", (req, res) => {
+    res.json(sharedAnnouncements);
+  });
+
+  app.post("/api/announcements", (req, res) => {
+    const newAnnouncement = {
+      ...req.body,
+      id: Math.random().toString(36).substring(2, 11) + Date.now().toString(36),
+      timestamp: Date.now()
+    };
+    sharedAnnouncements.unshift(newAnnouncement);
+    res.status(201).json(newAnnouncement);
+  });
+
+  app.put("/api/announcements/:id", (req, res) => {
+    const { id } = req.params;
+    sharedAnnouncements = sharedAnnouncements.map(a => a.id === id ? { ...a, ...req.body } : a);
+    res.json({ success: true });
+  });
+
+  app.delete("/api/announcements/:id", (req, res) => {
+    const { id } = req.params;
+    sharedAnnouncements = sharedAnnouncements.filter(a => a.id !== id);
     res.json({ success: true });
   });
 
