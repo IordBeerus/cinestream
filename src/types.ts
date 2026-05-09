@@ -33,6 +33,7 @@ export interface Movie {
   language?: string;
   category: "Trending Now" | "New Releases" | "Anime" | "Action" | "Drama" | "Comedy" | "Sci-Fi" | "Others";
   seasons?: Season[];
+  trailerUrl?: string;
   isWatchlist?: boolean;
   isFeatured?: boolean;
 }

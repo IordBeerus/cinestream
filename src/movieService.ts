@@ -32,6 +32,7 @@ const INITIAL_MOVIES: Movie[] = [
     duration: "2h 49m",
     language: "English",
     category: "Trending Now",
+    trailerUrl: "https://www.youtube.com/embed/zSWdZVtXT7E",
     isFeatured: true
   },
   {
@@ -46,7 +47,8 @@ const INITIAL_MOVIES: Movie[] = [
     rating: "9.0",
     duration: "2h 32m",
     language: "English",
-    category: "Action"
+    category: "Action",
+    trailerUrl: "https://www.youtube.com/embed/EXeTwQWrcwY"
   },
   {
     id: "3",
@@ -60,7 +62,8 @@ const INITIAL_MOVIES: Movie[] = [
     rating: "8.8",
     duration: "2h 28m",
     language: "English",
-    category: "Trending Now"
+    category: "Trending Now",
+    trailerUrl: "https://www.youtube.com/embed/YoHD9XEInc0"
   },
   {
     id: "4",

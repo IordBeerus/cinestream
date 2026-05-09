@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { X, Play, Plus, ThumbsUp, Check, Volume2, Share2, Info, ChevronDown, Star, Settings, Trash2 } from "lucide-react";
 import { Movie } from "../types";
 import { motion, AnimatePresence } from "motion/react";
@@ -25,6 +25,29 @@ export default function MovieModal({ movie, isOpen, onClose, onRefresh, onPlay, 
   const [copied, setCopied] = useState(false);
   const [isEpisodesFocused, setIsEpisodesFocused] = useState(false);
   const [isModifyOpen, setIsModifyOpen] = useState(false);
+  const [scrollOpacity, setScrollOpacity] = useState(1);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (modalRef.current) {
+        const scrollTop = modalRef.current.scrollTop;
+        // Fade out over first 300px
+        const opacity = Math.max(0, 1 - scrollTop / 300);
+        setScrollOpacity(opacity);
+      }
+    };
+
+    const currentModal = modalRef.current;
+    if (currentModal) {
+      currentModal.addEventListener("scroll", handleScroll);
+    }
+    return () => {
+      if (currentModal) {
+        currentModal.removeEventListener("scroll", handleScroll);
+      }
+    };
+  }, [isOpen]);
 
   const handleToggleWatchlist = () => {
     movieService.toggleWatchlist(movie.id);
@@ -81,6 +104,7 @@ export default function MovieModal({ movie, isOpen, onClose, onRefresh, onPlay, 
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            ref={modalRef}
             className={`relative w-full max-w-5xl md:w-[90%] bg-[#181818] rounded-none md:rounded-xl overflow-y-auto max-h-screen md:max-h-[95vh] shadow-[0_20px_100px_rgba(0,0,0,0.9)] pointer-events-auto transition-all duration-500`}
           >
             <button 
@@ -102,10 +126,30 @@ export default function MovieModal({ movie, isOpen, onClose, onRefresh, onPlay, 
                   className="overflow-hidden"
                 >
                   <div className="relative aspect-video">
-                    <img src={movie.thumbnailUrl} className="w-full h-full object-cover" alt="" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#181818] via-transparent to-transparent" />
+                    {movie.trailerUrl ? (
+                      <div 
+                        className="absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-300"
+                        style={{ opacity: scrollOpacity }}
+                      >
+                         <iframe
+                            src={`${movie.trailerUrl}?autoplay=1&mute=1&controls=0&loop=1&playlist=${movie.trailerUrl.split('/').pop()}`}
+                            className="w-full h-full pointer-events-none"
+                            allow="autoplay; encrypted-media"
+                            title="Trailer"
+                          />
+                      </div>
+                    ) : (
+                      <img 
+                        src={movie.thumbnailUrl} 
+                        className="w-full h-full object-cover transition-opacity duration-300" 
+                        style={{ opacity: scrollOpacity }}
+                        alt="" 
+                      />
+                    )}
                     
-                    <div className="absolute bottom-10 left-10 right-10">
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#181818] via-transparent to-transparent pointer-events-none" />
+                    
+                    <div className="absolute bottom-10 left-10 right-10" style={{ opacity: scrollOpacity }}>
                       <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tighter mb-6">{movie.title}</h1>
                       <div className="flex items-center gap-4">
                         <button 

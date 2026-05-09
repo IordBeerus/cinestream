@@ -486,6 +486,17 @@ export default function AddMovieForm({
                   </div>
 
                   <div>
+                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Trailer URL (YouTube/Vimeo Embed)</label>
+                    <input
+                      type="url"
+                      value={formData.trailerUrl || ""}
+                      onChange={(e) => setFormData({ ...formData, trailerUrl: e.target.value })}
+                      className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-netflix-red outline-none transition font-mono"
+                      placeholder="https://www.youtube.com/embed/..."
+                    />
+                  </div>
+
+                  <div>
                     <div className="flex items-center justify-between mb-1.5 ml-1">
                       <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest">Thumbnail</label>
                       <button
