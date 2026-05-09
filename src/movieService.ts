@@ -181,61 +181,70 @@ const generateId = () => {
 };
 
 export const movieService = {
-  getMovies: (): Movie[] => {
+  getMovies: async (): Promise<Movie[]> => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (!stored) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_MOVIES));
-        return INITIAL_MOVIES;
-      }
-      return JSON.parse(stored);
+      const response = await fetch("/api/movies");
+      if (!response.ok) throw new Error("Failed to fetch movies");
+      return await response.json();
     } catch (e) {
-      console.error("Error reading from localStorage:", e);
-      return [];
+      console.error("Error reading from backend:", e);
+      // Fallback to initial movies if backend fails
+      return INITIAL_MOVIES;
     }
   },
 
-  addMovie: (movie: Omit<Movie, "id">): Movie => {
-    const movies = movieService.getMovies();
-    const newMovie: Movie = {
-      ...movie,
-      id: generateId()
-    } as Movie;
-    const updated = [...movies, newMovie];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    return newMovie;
+  addMovie: async (movie: Omit<Movie, "id">): Promise<Movie> => {
+    const response = await fetch("/api/movies", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(movie)
+    });
+    if (!response.ok) throw new Error("Failed to add movie");
+    return await response.json();
   },
 
   toggleWatchlist: (id: string): void => {
-    const movies = movieService.getMovies();
-    const updated = movies.map(m => 
-      m.id === id ? { ...m, isWatchlist: !m.isWatchlist } : m
-    );
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    // Watchlist remains local to the user's browser for privacy
+    const stored = JSON.parse(localStorage.getItem(WATCHLIST_KEY) || "[]");
+    let updated;
+    if (stored.includes(id)) {
+      updated = stored.filter((i: string) => i !== id);
+    } else {
+      updated = [...stored, id];
+    }
+    localStorage.setItem(WATCHLIST_KEY, JSON.stringify(updated));
   },
 
-  updateMovie: (id: string, updates: Partial<Movie>): void => {
-    const movies = movieService.getMovies();
-    const updated = movies.map(m => 
-      m.id === id ? { ...m, ...updates } : m
-    );
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  getWatchlistIds: (): string[] => {
+    return JSON.parse(localStorage.getItem(WATCHLIST_KEY) || "[]");
   },
 
-  toggleFeatured: (id: string): void => {
-    const movies = movieService.getMovies();
-    const updated = movies.map(m => 
-      m.id === id ? { ...m, isFeatured: !m.isFeatured } : m
-    );
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  updateMovie: async (id: string, updates: Partial<Movie>): Promise<void> => {
+    const response = await fetch(`/api/movies/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates)
+    });
+    if (!response.ok) throw new Error("Failed to update movie");
   },
 
-  deleteMovie: (id: string): void => {
-    const movies = movieService.getMovies();
-    const updatedMovies = movies.filter(m => m.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedMovies));
+  toggleFeatured: async (id: string): Promise<void> => {
+    // We need current movies to toggle locally then push to server
+    const response = await fetch("/api/movies");
+    const movies = await response.json();
+    const movie = movies.find((m: any) => m.id === id);
+    if (movie) {
+      await movieService.updateMovie(id, { isFeatured: !movie.isFeatured });
+    }
+  },
+
+  deleteMovie: async (id: string): Promise<void> => {
+    const response = await fetch(`/api/movies/${id}`, {
+      method: "DELETE"
+    });
+    if (!response.ok) throw new Error("Failed to delete movie");
     
-    // Also cleanup from watchlist, history, and progress
+    // Also cleanup from local states
     const profiles = movieService.getProfiles();
     profiles.forEach(p => {
       const progressKey = `${PROGRESS_KEY}_${p.id}`;
@@ -367,8 +376,8 @@ export const movieService = {
     return JSON.parse(localStorage.getItem(historyKey) || "[]");
   },
 
-  getRecommendedMovies: (): Movie[] => {
-    const movies = movieService.getMovies();
+  getRecommendedMovies: async (): Promise<Movie[]> => {
+    const movies = await movieService.getMovies();
     const history = movieService.getHistory();
     const historyIds = new Set(history.map(h => h.movieId));
     

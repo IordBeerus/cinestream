@@ -35,16 +35,35 @@ export default function App() {
   const [movieToEdit, setMovieToEdit] = useState<Movie | null>(null);
   const [announcementToEdit, setAnnouncementToEdit] = useState<Announcement | null>(null);
 
-  const refreshMovies = () => {
-    setMovies(movieService.getMovies());
+  const [recommendedMovies, setRecommendedMovies] = useState<Movie[]>([]);
+
+  const refreshMovies = async () => {
+    const rawMovies = await movieService.getMovies();
+    const watchlistIds = movieService.getWatchlistIds();
+    
+    // Map shared movies with local watchlist preference
+    const moviesWithWatchlist: Movie[] = rawMovies.map(m => ({
+      ...m,
+      isWatchlist: watchlistIds.includes(m.id)
+    }));
+    
+    setMovies(moviesWithWatchlist);
+    
     if (activeProfile) {
       setHistory(movieService.getHistory());
       setProgress(movieService.getAllProgress());
+      
+      const recs = await movieService.getRecommendedMovies();
+      // Ensure we use the latest movie objects from our stateful list
+      const mappedRecs = recs
+        .map(r => moviesWithWatchlist.find(m => m.id === r.id))
+        .filter((m): m is Movie => !!m);
+      setRecommendedMovies(mappedRecs);
     }
   };
 
-  const handleUpdateMovie = (id: string, updates: Partial<Movie>) => {
-    movieService.updateMovie(id, updates);
+  const handleUpdateMovie = async (id: string, updates: Partial<Movie>) => {
+    await movieService.updateMovie(id, updates);
     refreshMovies();
     setMovieToEdit(null);
   };
@@ -66,17 +85,20 @@ export default function App() {
     setIsFormOpen(true);
   };
 
-  const refreshData = () => {
+  const refreshData = async () => {
     setProfiles(movieService.getProfiles());
-    refreshMovies();
+    await refreshMovies();
   };
 
   useEffect(() => {
-    refreshData();
-    const savedProfile = movieService.getActiveProfile();
-    if (savedProfile) {
-      setActiveProfile(savedProfile);
-    }
+    const init = async () => {
+      await refreshData();
+      const savedProfile = movieService.getActiveProfile();
+      if (savedProfile) {
+        setActiveProfile(savedProfile);
+      }
+    };
+    init();
   }, []);
 
   useEffect(() => {
@@ -151,11 +173,6 @@ export default function App() {
       .filter((m): m is Movie => !!m);
   }, [history, movies]);
 
-  const recommendedMovies = useMemo(() => {
-    if (!activeProfile) return [];
-    return movieService.getRecommendedMovies().map(m => movies.find(mov => mov.id === m.id)).filter((m): m is Movie => !!m);
-  }, [history, movies, activeProfile]);
-
   const isAnyFilterActive = useMemo(() => !!(searchQuery.trim() || selectedGenre || selectedYear), [searchQuery, selectedGenre, selectedYear]);
 
   const moviesByCategory = useMemo(() => {
@@ -174,8 +191,8 @@ export default function App() {
     return map;
   }, [movies]);
 
-  const handleAddMovie = (newMovie: Omit<Movie, "id">) => {
-    movieService.addMovie(newMovie);
+  const handleAddMovie = async (newMovie: Omit<Movie, "id">) => {
+    await movieService.addMovie(newMovie);
     refreshMovies();
   };
 
@@ -583,6 +600,7 @@ export default function App() {
           }}
           onDetails={setSelectedMovie}
           onEdit={handleEditMovie}
+          recommendations={recommendedMovies}
         />
       )}
 

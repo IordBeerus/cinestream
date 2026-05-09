@@ -55,11 +55,11 @@ export default function AddMovieForm({
 
   const [seasons, setSeasons] = useState<Season[]>([]);
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     try {
       if (movieToEdit) {
         if (window.confirm(`Are you sure you want to delete "${movieToEdit.title}"?`)) {
-          movieService.deleteMovie(movieToEdit.id);
+          await movieService.deleteMovie(movieToEdit.id);
           if (onDelete) onDelete();
           onClose();
         }
@@ -206,7 +206,7 @@ export default function AddMovieForm({
     }
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     if (formType === 'announcement') {
       return handleAddAnnouncement(e);
     }
@@ -223,9 +223,9 @@ export default function AddMovieForm({
     }
 
     if (movieToEdit && onUpdateMovie) {
-      onUpdateMovie(movieToEdit.id, movieData);
+      await onUpdateMovie(movieToEdit.id, movieData);
     } else {
-      onAdd(movieData as Omit<Movie, "id">);
+      await onAdd(movieData as Omit<Movie, "id">);
     }
     
     onClose();

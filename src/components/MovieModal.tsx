@@ -18,9 +18,10 @@ interface MovieModalProps {
   onPlay: (movie: Movie) => void;
   onDetails?: (movie: Movie) => void;
   onEdit?: (movie: Movie) => void;
+  recommendations?: Movie[];
 }
 
-export default function MovieModal({ movie, isOpen, onClose, onRefresh, onPlay, onDetails, onEdit }: MovieModalProps) {
+export default function MovieModal({ movie, isOpen, onClose, onRefresh, onPlay, onDetails, onEdit, recommendations = [] }: MovieModalProps) {
   const [liked, setLiked] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isEpisodesFocused, setIsEpisodesFocused] = useState(false);
@@ -54,26 +55,26 @@ export default function MovieModal({ movie, isOpen, onClose, onRefresh, onPlay, 
     if (onRefresh) onRefresh();
   };
 
-  const handleToggleFeatured = () => {
-    movieService.toggleFeatured(movie.id);
+  const handleToggleFeatured = async () => {
+    await movieService.toggleFeatured(movie.id);
     if (onRefresh) onRefresh();
   };
 
-  const handleUpdateType = (type: "movie" | "tv") => {
-    movieService.updateMovie(movie.id, { type });
-    if (onRefresh) onRefresh();
-    setIsModifyOpen(false);
-  };
-
-  const handleUpdateCategory = (category: Movie["category"]) => {
-    movieService.updateMovie(movie.id, { category });
+  const handleUpdateType = async (type: "movie" | "tv") => {
+    await movieService.updateMovie(movie.id, { type });
     if (onRefresh) onRefresh();
     setIsModifyOpen(false);
   };
 
-  const handleDelete = () => {
+  const handleUpdateCategory = async (category: Movie["category"]) => {
+    await movieService.updateMovie(movie.id, { category });
+    if (onRefresh) onRefresh();
+    setIsModifyOpen(false);
+  };
+
+  const handleDelete = async () => {
     if (window.confirm(`Are you sure you want to delete "${movie.title}"? This action cannot be undone.`)) {
-      movieService.deleteMovie(movie.id);
+      await movieService.deleteMovie(movie.id);
       if (onRefresh) onRefresh();
       onClose();
     }
@@ -375,7 +376,7 @@ export default function MovieModal({ movie, isOpen, onClose, onRefresh, onPlay, 
                     <div className="pt-10 border-t border-white/5">
                         <h3 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-6">You might also like</h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                          {movieService.getRecommendedMovies().filter(m => m.id !== movie.id).slice(0, 6).map(rec => (
+                          {recommendations.filter(m => m.id !== movie.id).slice(0, 6).map(rec => (
                             <div 
                               key={rec.id} 
                               onClick={() => onDetails?.(rec)}
