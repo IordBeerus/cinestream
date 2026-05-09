@@ -92,6 +92,7 @@ export default function AddMovieForm({
         duration: movieToEdit.duration || "1h 30m",
         category: movieToEdit.category,
         isFeatured: movieToEdit.isFeatured || false,
+        trailerUrl: movieToEdit.trailerUrl || "",
       });
       setSeasons(movieToEdit.seasons || []);
     } else if (announcementToEdit) {

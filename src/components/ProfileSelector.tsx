@@ -214,6 +214,7 @@ export default function ProfileSelector({ profiles, onSelect, onRefresh }: Profi
                     } else if (val.length === 4) {
                       setPinError(true);
                       setEnteredPin("");
+                      setTimeout(() => setPinError(false), 500);
                     }
                   }}
                   autoFocus
