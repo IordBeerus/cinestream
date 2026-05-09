@@ -1,0 +1,6 @@
+{
+  "name": "CineStream",
+  "description": "A Netflix-inspired movie streaming platform where users can curate their own library using Google Drive links.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
